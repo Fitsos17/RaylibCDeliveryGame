@@ -6,10 +6,10 @@ void DrawDeliveryBike(RenderTexture2D target) {
         ClearBackground(BLANK); // Transparent background
         
         // 1. Main Bike Frame (Grey)
-        DrawRectangle(13, 5, 6, 20, DARKGRAY);
+        DrawRectangle(13, 5, 6, 20, DARKBROWN);
         
         // 2. Handlebars (Black)
-        DrawRectangle(8, 7, 16, 6, BLACK); 
+        DrawRectangle(8, 7, 16, 6, DARKGRAY); 
 
         // Left Mirror Stem & Glass
         DrawRectangle(8, 5, 4, 2, LIGHTGRAY);  // Mirror glass moved down to Y=4
@@ -27,4 +27,9 @@ void DrawDeliveryBike(RenderTexture2D target) {
         // 5. Headlight (Yellow)
         DrawRectangle(15, 3, 2, 2, YELLOW);
     EndTextureMode();
+}
+
+void Draw8BitRoad() {
+  // to be developed...
+  DrawRectangle(500, 300, 100, 40, RED);
 }
