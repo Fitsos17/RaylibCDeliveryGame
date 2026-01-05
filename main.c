@@ -2,7 +2,6 @@
 #include <time.h>
 
 #include"helpers.c"
-#include"drawTextures.c"
 
 const int INITIAL_WINDOW_WIDTH = 1300; 
 const int INITIAL_WINDOW_HEIGHT = 800;
@@ -22,8 +21,6 @@ int count = 0; //Number of order
 int main(void) {
   
   SetRandomSeed(time(NULL)); 
-  Vehicle vehicles[MAX_VEHICLES];
-  vehicleGenerator(MAX_VEHICLES, vehicles, 80, 80); // posx , posy != 0 else bug. Needs to be offsected
   
   InitWindow(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, "RaylibProjectAuth");
   Texture2D background = LoadTexture("assets/map.jpg"); 
@@ -54,11 +51,25 @@ int main(void) {
   // initialize minimap camera
   Camera2D minimapCam = {0};
   minimapCam.zoom = MINIMAP_ZOOM;
+  
+  // generate random vehicles inside the borders
+  Vehicle vehicles[MAX_VEHICLES];
+  vehicleGenerator(MAX_VEHICLES, vehicles, background.height, background.width, backgroundWithBorders); // posx , posy != 0 else bug. Needs to be offsected
+  
 
   int rotation = 180;
 
+  KeyboardKey activeKey = KEY_NULL;
+
+  RenderTexture2D carTex = LoadRenderTexture(40, 65);
+  RenderTexture2D truckTex = LoadRenderTexture(65, 110);
+  RenderTexture2D policeTex = LoadRenderTexture(40, 65);
+  PrepareCarTexture(carTex);
+  PrepareTruckTexture(truckTex);
+  PreparePoliceTexture(policeTex);
+
   while (!WindowShouldClose()) {
-    updateTraffic(vehicles, MAX_VEHICLES, cam, mapHeight, mapWidth);
+    updateTraffic(vehicles, MAX_VEHICLES, backgroundWithBorders);
     BeginDrawing();
 
       ClearBackground(DARKGRAY);
@@ -85,12 +96,14 @@ int main(void) {
       };
       
       /*** MOVEMENT ***/ 
+      // move forward (W)
       if (IsKeyDown(KEY_W)) {
         if (!willTouchBorder(backgroundWithBorders, collisionPoints[0])) {
           rotation = 180;
           deliveryBike.y -= SPEED_CONSTANT;
         }
       }
+      
       // move backward (S)
       if (IsKeyDown(KEY_S)) {
         if (!willTouchBorder(backgroundWithBorders, collisionPoints[2])) {
@@ -132,10 +145,10 @@ int main(void) {
       BeginMode2D(cam);
         
         DrawTexture(background, 0, 0, WHITE);
-        for (int i=0; i<MAX_VEHICLES; i++)  {
-            mapVehicleToDrawFunction(vehicles[i].type, vehicles[i].posx, vehicles[i].posy, vehicles[i].vehicleColor);
-        }
         
+        for (int i = 0; i < MAX_VEHICLES; i++) {
+          RenderVehicle(vehicles[i], carTex, truckTex, policeTex);
+        }
                 
         Rectangle destRect = { deliveryBike.x, deliveryBike.y, DELIVERY_BIKE_SCALED_SIZE, DELIVERY_BIKE_SCALED_SIZE };
         Vector2 origin = { DELIVERY_BIKE_SCALED_SIZE / 2, DELIVERY_BIKE_SCALED_SIZE / 2 };
@@ -159,9 +172,7 @@ int main(void) {
             DrawTexture(background, 0, 0, LIGHTGRAY);
             
             for (int i=0; i<MAX_VEHICLES; i++) {
-                if(vehicles[i].type == POLICE)  {
-                    DrawRectangle(vehicles[i].posx, vehicles[i].posy, 40, 60, BLUE);
-                }
+              RenderVehicle(vehicles[i], carTex, truckTex, policeTex);
             }
 
             DrawTexturePro(deliveryBikeRender.texture, bikeSource, destRect, origin, rotation, WHITE);
@@ -192,6 +203,9 @@ int main(void) {
   
   UnloadTexture(background);
   UnloadImage(backgroundWithBorders);
+  UnloadRenderTexture(carTex);
+  UnloadRenderTexture(truckTex);
+  UnloadRenderTexture(policeTex);
   UnloadRenderTexture(deliveryBikeRender);
   CloseWindow();
 

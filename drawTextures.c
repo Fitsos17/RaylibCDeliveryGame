@@ -1,4 +1,4 @@
-#include"raylib.h"
+#include "raylib.h"
 
 void DrawDeliveryBike(RenderTexture2D target) {
   // DRAW THE SPRITE ONCE to the texture
@@ -30,61 +30,77 @@ void DrawDeliveryBike(RenderTexture2D target) {
   EndTextureMode();
 }
 
-void DrawCar(int posx, int posy, Color color) {    // Draw car
-  DrawRectangle(posx, posy, 40, 65, color); // Main frame
+// CAR: 40x65 base
+void PrepareCarTexture(RenderTexture2D target) {
+    BeginTextureMode(target);
+        ClearBackground(BLANK);
+        
+        // Main Body (White will be tinted by vehicleColor)
+        DrawRectangle(0, 0, 40, 65, WHITE); 
+        
+        // Shading/Detail (Darken the bottom/rear slightly for depth)
+        DrawRectangle(0, 55, 40, 10, CLITERAL(Color){ 0, 0, 0, 40 }); 
 
-  DrawRectangle(posx + 5, posy + 12, 30, 10, SKYBLUE);    // Dashscreen
+        // Windows
+        DrawRectangle(5, 12, 30, 15, SKYBLUE);   // Windshield
+        DrawRectangle(5, 35, 30, 10, SKYBLUE);   // Rear window
+        
+        // Lights
+        DrawRectangle(5, 2, 10, 5, YELLOW);      // Left Headlight
+        DrawRectangle(25, 2, 10, 5, YELLOW);     // Right Headlight
+        DrawRectangle(5, 62, 10, 3, RED);        // Left Brake
+        DrawRectangle(25, 62, 10, 3, RED);       // Right Brake
 
-  DrawRectangle(posx + 5, posy + 45, 30, 8, SKYBLUE);   // Backscreen
-  
-  DrawRectangle(posx + 2, posy - 2, 8, 4, YELLOW);    //Light left
-  
-  DrawRectangle(posx + 30, posy - 2, 8, 4, YELLOW);    //Light right
+        // Bumpers
+        DrawRectangle(0, 0, 40, 3, DARKGRAY);    // Front Bumper
+        DrawRectangle(0, 63, 40, 2, DARKGRAY);   // Rear Bumper
+    EndTextureMode();
 }
 
-void DrawPoliceCar(int posx, int posy) {    // Draw policecar
-  DrawRectangle(posx, posy, 40, 65, WHITE); // Main frame
+// TRUCK: 65x110 base
+void PrepareTruckTexture(RenderTexture2D target) {
+    BeginTextureMode(target);
+        ClearBackground(BLANK); 
+        
+        // 1. Cab
+        DrawRectangle(5, 0, 55, 35, WHITE); 
+        DrawRectangle(10, 5, 45, 10, SKYBLUE); 
+        
+        // 2. Mirrors
+        DrawRectangle(0, 10, 5, 8, DARKGRAY);   // Left
+        DrawRectangle(60, 10, 5, 8, DARKGRAY);  // Right
 
-  DrawRectangle(posx, posy, 40, 12, BLACK);    // Front
-
-  DrawRectangle(posx, posy + 53, 40, 12, BLACK);   // Back
-  
-  DrawRectangle(posx + 8, posy + 30, 12, 6, RED);    // Police lights
-  
-  DrawRectangle(posx + 20, posy + 30, 12, 6, BLUE);    // Police lights
-  
-  DrawRectangle(posx + 5, posy + 15, 30, 8, YELLOW);    // Dashscreen
+        // 3. Trailer
+        DrawRectangle(5, 38, 55, 72, WHITE); 
+    EndTextureMode();
 }
 
-void DrawTruck (int posx, int posy, Color color)    {   // Draw truck
-  DrawRectangle(posx, posy, 55, 35, WHITE);  // Main frame
-  
-  DrawRectangle(posx + 5, posy + 5, 45, 10, SKYBLUE);    // Dashscreen
-  
-  DrawRectangle(posx, posy + 38, 55, 72, color);  // Trailer
-  
-  DrawRectangle(posx - 5, posy + 10, 5, 8, DARKGRAY); // Left mirror
-  
-  DrawRectangle(posx + 55, posy + 10, 5, 8, DARKGRAY);    // Right mirror
+// POLICE: 40x65 base
+void PreparePoliceTexture(RenderTexture2D target) {
+    BeginTextureMode(target);
+        ClearBackground(BLANK);
+        
+        // Body (White)
+        DrawRectangle(0, 0, 40, 65, WHITE); 
+        
+        // Black sides to make it look like a police interceptor
+        DrawRectangle(0, 15, 5, 35, BLACK);
+        DrawRectangle(35, 15, 5, 35, BLACK);
+        
+        // Windows
+        DrawRectangle(5, 12, 30, 12, SKYBLUE);
+        
+        // Siren Bar
+        DrawRectangle(5, 30, 15, 8, RED);
+        DrawRectangle(20, 30, 15, 8, BLUE);
+        
+        // Push-bar at front
+        DrawRectangle(10, 0, 20, 4, BLACK);
+    EndTextureMode();
 }
 
-void mapVehicleToDrawFunction(TYPE_OF_VEHICLE selectedVehicle, int posx, int posy, Color color) {
-  switch (selectedVehicle)    {
-    case CAR:
-        DrawCar(posx, posy, color);
-        break;
-    case TRUCK:
-        DrawTruck(posx, posy, color);
-        break;
-    case POLICE:
-        DrawPoliceCar(posx, posy);
-        break;
-  }
-}
-          
-void DrawTrafficLight (int posx, int posy)  {   // Draw traffic light
-  Color color;
-
-  DrawRectangle(posx, posy, 20, 20, LIGHTGRAY);   // Pole
-  DrawCircleSector((Vector2){posx + 10, posy + 20}, 10, 0, 180, 0, color); //Light
-}
+// void DrawTrafficLight(int posx, int posy) {
+//     DrawRectangle(posx, posy, 20 * scale, 20 * scale, LIGHTGRAY); // Pole
+//     // Radius must also be scaled
+//     DrawCircleSector((Vector2){posx + (10 * scale), posy + (20 * scale)}, 10 * scale, 0, 180, 0, YELLOW); 
+// }
