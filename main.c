@@ -1,7 +1,7 @@
-#include"raylib.h"
 #include <time.h>
-
-#include"helpers.c"
+#include"raylib.h"
+#include"helpers.h"
+#include"drawTextures.h"
 
 const int INITIAL_WINDOW_WIDTH = 1300; 
 const int INITIAL_WINDOW_HEIGHT = 800;
@@ -25,7 +25,14 @@ int main(void) {
   InitWindow(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, "RaylibProjectAuth");
   Texture2D background = LoadTexture("assets/map.jpg"); 
   Image backgroundWithBorders = LoadImage("assets/mapWithBorders.jpg");
-  SetTextureFilter(background, TEXTURE_FILTER_POINT);
+  
+  InitAudioDevice();
+  Music backgroundMusic = LoadMusicStream("assets/background_music.mp3");
+  Sound horn = LoadSound("assets/horn.mp3");
+
+  SetMusicVolume(backgroundMusic, 0.5f);
+  SetSoundVolume(horn, 0.3f);
+  
   
   int mapHeight = background.height;
   int mapWidth = background.width;
@@ -67,9 +74,11 @@ int main(void) {
   PrepareCarTexture(carTex);
   PrepareTruckTexture(truckTex);
   PreparePoliceTexture(policeTex);
+  PlayMusicStream(backgroundMusic);
 
   while (!WindowShouldClose()) {
-    updateTraffic(vehicles, MAX_VEHICLES, backgroundWithBorders);
+    UpdateMusicStream(backgroundMusic);
+    updateTraffic(vehicles, MAX_VEHICLES, backgroundWithBorders, (Vector2){deliveryBike.x, deliveryBike.y});
     BeginDrawing();
 
       ClearBackground(DARKGRAY);
@@ -95,35 +104,70 @@ int main(void) {
           {deliveryBike.x - horizontalOffset - 1, deliveryBike.y}
       };
       
+      
       /*** MOVEMENT ***/ 
-      // move forward (W)
+      // Create a "future" rectangle to test if the move is valid before moving
+      Rectangle futurePos = deliveryBike;
+
+      // MOVE FORWARD (W)
       if (IsKeyDown(KEY_W)) {
-        if (!willTouchBorder(backgroundWithBorders, collisionPoints[0])) {
+        futurePos.y -= SPEED_CONSTANT; // Calculate target position
+        
+        // Check specifically if we hit a CAR
+        bool hitCar = checkCollisionWithVehicles(futurePos, vehicles, MAX_VEHICLES, true);
+
+        if (!willTouchBorder(backgroundWithBorders, collisionPoints[0]) && !hitCar) {
           rotation = 180;
           deliveryBike.y -= SPEED_CONSTANT;
         }
       }
       
-      // move backward (S)
+      // MOVE BACKWARD (S)
       if (IsKeyDown(KEY_S)) {
-        if (!willTouchBorder(backgroundWithBorders, collisionPoints[2])) {
+        futurePos = deliveryBike; 
+        futurePos.y += SPEED_CONSTANT;
+
+        bool hitCar = checkCollisionWithVehicles(futurePos, vehicles, MAX_VEHICLES, true);
+
+        if (!willTouchBorder(backgroundWithBorders, collisionPoints[2]) && !hitCar) {
           rotation = 0;
           deliveryBike.y += SPEED_CONSTANT;
         }
       }
-      // move left (A)
+
+      // MOVE LEFT (A)
       if(IsKeyDown(KEY_A)) {
-        if (!willTouchBorder(backgroundWithBorders, collisionPoints[3])) {
+        futurePos = deliveryBike;
+        futurePos.x -= SPEED_CONSTANT;
+
+        bool hitCar = checkCollisionWithVehicles(futurePos, vehicles, MAX_VEHICLES, true);
+
+        if (!willTouchBorder(backgroundWithBorders, collisionPoints[3]) && !hitCar) {
           rotation = 90;
           deliveryBike.x -= SPEED_CONSTANT;
         }
       }
-      // move right (D)
+      
+      // MOVE RIGHT (D)
       if (IsKeyDown(KEY_D)) {
-        if (!willTouchBorder(backgroundWithBorders, collisionPoints[1])) {
+        futurePos = deliveryBike;
+        futurePos.x += SPEED_CONSTANT;
+
+        bool hitCar = checkCollisionWithVehicles(futurePos, vehicles, MAX_VEHICLES, true);
+
+        if (!willTouchBorder(backgroundWithBorders, collisionPoints[1]) && !hitCar) {
           rotation = 270;
           deliveryBike.x += SPEED_CONSTANT;
         }
+      }
+
+      // check for current collision to play the horn sound
+      bool isCollidingNow = checkCollisionWithVehicles(deliveryBike, vehicles, MAX_VEHICLES, false);
+      
+      if (isCollidingNow) {
+          if (!IsSoundPlaying(horn)) {
+              PlaySound(horn);
+          }
       }
 
       /*** CAMERA ***/
