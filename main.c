@@ -31,7 +31,7 @@ const int MINIMAP_BORDER = 2;
 bool showOrders = false;
 int count = 0; // Number of order
 float totalMoney = 0.0f;
-float difficultyFactor = 0.8f; // Smaller equals less time
+float difficultyFactor = 0.5f; // Smaller equals less time
 
 int main(void) {
   
@@ -323,7 +323,7 @@ int main(void) {
         float reward = 5.0f + (distRestToHouse * 0.015f);
         
         DrawText(TextFormat("Distance: %.1f m", distToHouse), 20, 70, 20, BLACK);
-        DrawText(TextFormat("Reward: $%.2f", reward), 20, 90, 20, DARKGREEN);
+        DrawText(TextFormat("Max reward: $%.2f", reward), 20, 90, 20, DARKGREEN);
       }
       
       else if (showOrders)  {
