@@ -32,7 +32,6 @@ bool showOrders = false;
 int count = 0; // Number of order
 float totalMoney = 0.0f;
 float difficultyFactor = 0.8f; // Smaller equals less time
-bool isStuck;
 
 int main(void) {
   
@@ -321,8 +320,7 @@ int main(void) {
         
         float distRestToHouse = Vector2Distance(currentOrder.pickupLocation, currentOrder.dropoffLocation);
         float distToHouse = Vector2Distance(bikePos, currentOrder.dropoffLocation);
-        float timePassed = currentOrder.maxTimeAllowed - currentOrder.timeRemaining;
-        float reward = currentOrder.initialReward - (currentOrder.initialReward / (currentOrder.maxTimeAllowed * currentOrder.maxTimeAllowed)) * (timePassed * timePassed);
+        float reward = 5.0f + (distRestToHouse * 0.015f);
         
         DrawText(TextFormat("Distance: %.1f m", distToHouse), 20, 70, 20, BLACK);
         DrawText(TextFormat("Reward: $%.2f", reward), 20, 90, 20, DARKGREEN);
