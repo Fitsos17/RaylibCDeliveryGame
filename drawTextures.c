@@ -2,7 +2,7 @@
  * Πανεπιστήμιο: Αριστοτέλειο Πανεπιστήμιο Θεσσαλονίκης
  * Τμήμα: Τμήμα Ηλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών
  * Μάθημα: Δομημένος Προγραμματισμός (004)
- * Τίτλος Εργασίας: Raylib Food Delivery Game
+ * Τίτλος Εργασίας: Delivery Rush
  * Συγγραφείς: 
  * - Αντώνιος Καραφώτης (ΑΕΜ: 11891)
  * - Νικόλαος Αμοιρίδης (ΑΕΜ: 11836)
@@ -13,6 +13,10 @@
 #include "raylib.h"
 #include "drawTextures.h"
 
+/*
+Creates bike's sprite
+Parameter: Drawing target (target)
+*/
 void DrawDeliveryBike(RenderTexture2D target) {
   // DRAW THE SPRITE ONCE to the texture
   BeginTextureMode(target);
@@ -43,7 +47,11 @@ void DrawDeliveryBike(RenderTexture2D target) {
   EndTextureMode();
 }
 
-// CAR: 40x65 base
+/* 
+Creates car's sprite 
+Parameter: Drawing target (target)
+CAR: 40x65 base 
+*/
 void PrepareCarTexture(RenderTexture2D target) {
     BeginTextureMode(target);
         ClearBackground(BLANK);
@@ -70,7 +78,11 @@ void PrepareCarTexture(RenderTexture2D target) {
     EndTextureMode();
 }
 
-// TRUCK: 65x110 base
+/* 
+Creates truck's sprite
+Parameter: Drawing target
+TRUCK: 65x110 base
+*/
 void PrepareTruckTexture(RenderTexture2D target) {
     BeginTextureMode(target);
         ClearBackground(BLANK); 
@@ -88,7 +100,11 @@ void PrepareTruckTexture(RenderTexture2D target) {
     EndTextureMode();
 }
 
-// POLICE: 40x65 base
+/* 
+Creates policecar's sprite
+Parameter: Drawing target
+POLICE: 40x65 base
+*/
 void PreparePoliceTexture(RenderTexture2D target) {
     BeginTextureMode(target);
         ClearBackground(BLANK);
