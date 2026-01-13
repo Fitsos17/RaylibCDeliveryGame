@@ -3,7 +3,7 @@
  * Τμήμα: Τμήμα Ηλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών
  * Μάθημα: Δομημένος Προγραμματισμός (004)
  * Τίτλος Εργασίας: Delivery Rush
- * Συγγραφείς:
+ * Συγγραφείς: 
  * - Αντώνιος Καραφώτης (ΑΕΜ: 11891)
  * - Νικόλαος Αμοιρίδης (ΑΕΜ: 11836)
  * Άδεια Χρήσης: MIT License
@@ -70,10 +70,12 @@ typedef struct {
 } Vehicle;
 
 // functions
-bool DrawButton(const char *text, Rectangle rec, int fontSize, Color color, Color hoverColor, Color textColor);
 void InitMapLocations (Image map);
 Order CreateNewOrder();
 void updateOrder(Order *currentOrder, Vector2 bikePos, int *count, float *totalMoney, Building *houses, int houseCount, OrderStatusMessage *message, float *lastReward);
+void displayOrderMessage(OrderStatusMessage *message, float lastReward);
+bool DrawButton(const char *text, Rectangle rec, int fontSize, Color color, Color hoverColor, Color textColor);
+void DrawControlKey(const char* key, const char* action, int x, int y);
 TYPE_OF_VEHICLE mapRandomToVehicleType(int random);
 Color selectColor (TYPE_OF_VEHICLE selectedVehicle);
 bool willTouchBorder(Image image, Vector2 point);
@@ -81,10 +83,8 @@ void getVehicleSize(TYPE_OF_VEHICLE type, float *w, float *h);
 bool isVehiclePositionValid(Image image, float px, float py, TYPE_OF_VEHICLE type, int rotation);
 void RenderVehicle(Vehicle v, RenderTexture2D carT, RenderTexture2D truckT, RenderTexture2D policeT);
 void vehicleGenerator(int numOfVehicles, Vehicle vehicles[], int mapHeight, int mapWidth, Image mapWithBorders, Vector2 playerStartPos);
-bool checkCollisionWithVehicles(Rectangle playerRect, Vehicle *vehicles, int maxVehicles, bool useMargin);
 void updateTraffic(Vehicle *vehicles, int maxVehicles, Image mapWithBorders, Vector2 playerPos);
-void displayOrderMessage(OrderStatusMessage *message, float lastReward);
-void DrawControlKey(const char* key, const char* action, int x, int y);
+bool checkCollisionWithVehicles(Rectangle playerRect, Vehicle *vehicles, int maxVehicles, bool useMargin);
 Vector2 GetRandomValidPosition(Image map, Vehicle *vehicles, int maxVehicles, int mapWidth, int mapHeight);
 
 

@@ -3,7 +3,7 @@
  * Τμήμα: Τμήμα Ηλεκτρολόγων Μηχανικών και Μηχανικών Υπολογιστών
  * Μάθημα: Δομημένος Προγραμματισμός (004)
  * Τίτλος Εργασίας: Delivery Rush
- * Συγγραφείς:
+ * Συγγραφείς: 
  * - Αντώνιος Καραφώτης (ΑΕΜ: 11891)
  * - Νικόλαος Αμοιρίδης (ΑΕΜ: 11836)
  * Άδεια Χρήσης: MIT License
@@ -41,10 +41,15 @@ int count = 0; // Number of orders completed
 float totalMoney = 0.0f;
 float difficultyFactor = 0.5f; 
 
+/* Program's main function
+Initiates window, loads media (image/sound) and runs game loop using the states Menu, Gameplay and Options
+*/
 int main(void) {
   
   SetRandomSeed(time(NULL)); 
   
+  // This allows the game's internal resolution to update when entering Fullscreen
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
   InitWindow(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT, "Delivery Rush");
   
   // --- LOAD ASSETS ---
@@ -130,6 +135,18 @@ int main(void) {
   // --- MAIN LOOP ---
   while (running) {
     UpdateMusicStream(backgroundMusic);
+
+    float screenHeight = (float)GetScreenHeight();
+    float screenWidth = (float)GetScreenWidth();
+
+    if (IsKeyPressed(KEY_F)) ToggleFullscreen();
+
+    if (IsWindowFullscreen()) {
+        int monitor = GetCurrentMonitor();
+        screenHeight = (float)GetMonitorHeight(monitor);
+        screenWidth = (float)GetMonitorWidth(monitor);
+    }
+
     if (WindowShouldClose()) {
       exitRequest = true;
     }
@@ -256,9 +273,23 @@ int main(void) {
             }
         }
 
-        // 5. Camera Update
-        cam.target.x = deliveryBike.x;
-        cam.target.y = deliveryBike.y;
+        // 5. Camera Update (With Clamping for Fullscreen)
+        float visibleWidth = screenWidth / cam.zoom;
+        float visibleHeight = screenHeight / cam.zoom;
+        
+        // Clamp Camera X
+        if (mapWidth < visibleWidth) {
+            cam.target.x = mapWidth / 2.0f;
+        } else {
+            cam.target.x = Clamp(deliveryBike.x, visibleWidth/2.0f, mapWidth - visibleWidth/2.0f);
+        }
+
+        // Clamp Camera Y
+        if (mapHeight < visibleHeight) {
+            cam.target.y = mapHeight / 2.0f;
+        } else {
+            cam.target.y = Clamp(deliveryBike.y, visibleHeight/2.0f, mapHeight - visibleHeight/2.0f);
+        }
           
         if (cam.zoom >= 2 && GetMouseWheelMove() < 0) cam.zoom -= 0.2;
         else if (cam.zoom <= 3.6 && GetMouseWheelMove() > 0) cam.zoom += 0.2;
@@ -268,19 +299,26 @@ int main(void) {
         
         // 6. Inputs
         if (IsKeyPressed(KEY_K)) showOrders = !showOrders;
-        if (IsKeyPressed(KEY_F)) ToggleFullscreen();
     }
 
     // ==========================================
     // DRAWING
     // ==========================================
     BeginDrawing();
-      ClearBackground(DARKGRAY);
+      ClearBackground((Color){0, 0, 0, 204});
+
+      // --- COMMON MENU BACKGROUND DRAWING LOGIC ---
+      // This is used for all states EXCEPT Gameplay.
+      // It uses the Origin Vector to perfectly center the map without stretching.
+      Rectangle bgSource = { 0.0f, 0.0f, (float)background.width, (float)background.height };
+      Rectangle bgDest   = { screenWidth / 2.0f, screenHeight / 2.0f, (float)background.width, (float)background.height };
+      Vector2   bgOrigin = { (float)background.width / 2.0f, (float)background.height / 2.0f };
+
       // --- STATE: GAMEPLAY ---
       if (currentState == STATE_GAMEPLAY) {
           
-          // Re-center cam in case window resized
-          cam.offset = (Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
+          // Re-center cam offset in case window resized
+          cam.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
 
           BeginMode2D(cam);
             DrawTexture(background, 0, 0, WHITE);
@@ -322,7 +360,7 @@ int main(void) {
           int timerMin = (int)globalTimer / 60;
           const char* globalText = TextFormat("%02d:%02d", timerMin, timerSec);
           int gTimerW = 140;
-          int gTimerX = GetScreenWidth()/2 - gTimerW/2;
+          int gTimerX = screenWidth/2 - gTimerW/2;
 
           // Draw Box
           DrawRectangle(gTimerX, 20, gTimerW, 50, Fade(SKYBLUE, 0.9f));
@@ -333,7 +371,7 @@ int main(void) {
           DrawText(globalText, gTimerX + (gTimerW - MeasureText(globalText, 30))/2, 30, 30, gColor);
           
           // --- MINIMAP ---
-          int mmX = GetScreenWidth() - MINIMAP_WIDTH - 30;
+          int mmX = screenWidth - MINIMAP_WIDTH - 30;
           int mmY = 20;
           
           minimapCam.offset = (Vector2){ mmX + MINIMAP_WIDTH/2, mmY + MINIMAP_HEIGHT/2 };
@@ -359,21 +397,22 @@ int main(void) {
                 
           // --- HUD: ORDERS ---
           if (showOrders && currentOrder.foodPickedUp) {
-            DrawRectangle (10, 10, 260, 125, Fade(WHITE, 0.9f));
-            DrawRectangleLines (10, 10, 260, 125, BLACK);
+            DrawRectangle (10, 10, 260, 150, Fade(WHITE, 0.9f));
+            DrawRectangleLines (10, 10, 260, 150, BLACK);
             DrawText(TextFormat("Order %d:", count+1), 20, 20, 20, BLACK);
             DrawText(currentOrder.restaurantName, 20, 45, 15, BLACK);
             float distToHouse = Vector2Distance(bikePos, currentOrder.dropoffLocation);
             float distRestToHouse = Vector2Distance(currentOrder.pickupLocation, currentOrder.dropoffLocation);
             float reward = 5.0f + (distRestToHouse * 0.015f); // Approximation for display
             DrawText(TextFormat("Distance: %.1f m", distToHouse), 20, 70, 20, BLACK);
-            DrawText(TextFormat("Max reward: $%.2f", reward), 20, 90, 20, DARKGREEN);
+            DrawText(TextFormat("Max reward: $%.2f", reward), 20, 92.5f, 20, DARKGREEN);
+            DrawText(TextFormat("Total Cash: $%.2f", totalMoney), 20, 115, 20, DARKGREEN);  
           }
           else if (showOrders)  {
             DrawRectangle (10, 10, 220, 100, WHITE);
             DrawText(TextFormat("%d orders completed", count), 20, 20, 20, BLACK);
             DrawText(TextFormat("Total Cash: $%.2f", totalMoney), 20, 50, 20, DARKGREEN);
-          }
+        }
           
           // --- HUD: TIMER ---
           if (currentOrder.isActive && currentOrder.foodPickedUp) {
@@ -401,25 +440,25 @@ int main(void) {
           if (isRespawning) {
             const char* text1 = "CAN NOT MOVE";
             const char* text2 = TextFormat("Respawning in %.1f...", respawnTimer);
-            DrawText(text1, GetScreenWidth()/2 - MeasureText(text1, 50)/2, 100, 50, RED);
-            DrawText(text2, GetScreenWidth()/2 - MeasureText(text2, 40)/2, 160, 40, RED);
+            DrawText(text1, screenWidth/2 - MeasureText(text1, 50)/2, 100, 50, RED);
+            DrawText(text2, screenWidth/2 - MeasureText(text2, 40)/2, 160, 40, RED);
           }
       } 
       
       // --- STATE: GAME OVER ---
       else if (currentState == STATE_GAMEOVER) {
-        // 1. Background (Dimmed map)
-        DrawTexturePro(background, (Rectangle){0,0,background.width,background.height}, (Rectangle){0,0,GetScreenWidth(),GetScreenHeight()}, (Vector2){0,0}, 0, DARKGRAY);
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.85f));
+        // 1. Background (Centered)
+        DrawTexturePro(background, bgSource, bgDest, bgOrigin, 0.0f, DARKGRAY);
+        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.4f));
 
-        int centerX = GetScreenWidth() / 2;
-        int centerY = GetScreenHeight() / 2;
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
 
         // 2. Main Title
         const char* title = "\"RUSH\" OVER!";
         DrawText(title, centerX - MeasureText(title, 60)/2, centerY - 150, 60, RED);
 
-        // 3. Stats Panel
+        // 3. Stats Panel (Dynamically Centered)
         int panelW = 500;
         int panelH = 200;
         int panelX = centerX - panelW/2;
@@ -476,15 +515,16 @@ int main(void) {
       
       // --- STATE: MENU ---
       else if (currentState == STATE_MENU) {
-          // Draw dimmed game in background
-          DrawTexturePro(background, (Rectangle){0,0,background.width,background.height}, (Rectangle){0,0,GetScreenWidth(),GetScreenHeight()}, (Vector2){0,0}, 0, DARKGRAY);
+          // 1. Background (Centered)
+          DrawTexturePro(background, bgSource, bgDest, bgOrigin, 0.0f, DARKGRAY);
           
           const char* title = "DELIVERY RUSH";
           int titleWidth = MeasureText(title, 60);
-          DrawText(title, GetScreenWidth()/2 - titleWidth/2, 100, 60, RAYWHITE);
+          DrawText(title, screenWidth/2 - titleWidth/2, 100, 60, RAYWHITE);
 
-          float centerX = GetScreenWidth() / 2.0f - BUTTON_WIDTH / 2.0f;
-          float startY = GetScreenHeight() / 2.0f - 100;
+          // Center Buttons
+          float centerX = screenWidth / 2.0f - BUTTON_WIDTH / 2.0f;
+          float startY = screenHeight / 2.0f - 100;
 
           if (DrawButton("START GAME", (Rectangle){centerX, startY, BUTTON_WIDTH, BUTTON_HEIGHT}, FONT_SIZE, LIGHTGRAY, WHITE, BLACK)) {
               currentState = STATE_GAMEPLAY;
@@ -505,11 +545,12 @@ int main(void) {
 
       // --- STATE: OPTIONS ---
       else if (currentState == STATE_OPTIONS) {
-          DrawTexturePro(background, (Rectangle){0,0,background.width,background.height}, (Rectangle){0,0,GetScreenWidth(),GetScreenHeight()}, (Vector2){0,0}, 0, DARKGRAY);
-          DrawText("OPTIONS", GetScreenWidth()/2 - MeasureText("OPTIONS", 50)/2, 80, 50, RAYWHITE);
+          DrawTexturePro(background, bgSource, bgDest, bgOrigin, 0.0f, DARKGRAY);
+          DrawText("OPTIONS", screenWidth/2 - MeasureText("OPTIONS", 50)/2, 80, 50, RAYWHITE);
 
-          float centerX = GetScreenWidth() / 2.0f - BUTTON_WIDTH / 2.0f;
-          float y = 180;
+          float centerX = screenWidth / 2.0f - BUTTON_WIDTH / 2.0f;
+          // Calculate dynamic vertical start point
+          float y = screenHeight / 2.0f - 150; 
 
           // Screen Size
           DrawText("Display", centerX, y, 20, RAYWHITE);
@@ -563,22 +604,25 @@ int main(void) {
               currentState = STATE_MENU;
           }
       
-  }
+      }
       
       // --- STATE: CONTROLS ---
       else if (currentState == STATE_CONTROLS) {
-            // 1. Draw Background (Dimmed)
-            DrawTexturePro(background, (Rectangle){0,0,background.width,background.height}, (Rectangle){0,0,GetScreenWidth(),GetScreenHeight()}, (Vector2){0,0}, 0, DARKGRAY);
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.4f)); // Extra dim
+            // 1. Draw Background
+            DrawTexturePro(background, bgSource, bgDest, bgOrigin, 0.0f, DARKGRAY);
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.4f));
+
+            int centerX = screenWidth / 2;
+            int centerY = screenHeight / 2;
 
             // 2. Title
             const char* title = "HOW TO PLAY";
-            DrawText(title, GetScreenWidth()/2 - MeasureText(title, 50)/2, 60, 50, GOLD);
+            DrawText(title, centerX - MeasureText(title, 50)/2, 60, 50, GOLD);
 
-            // 3. Layout Coordinates
-            int leftColX = GetScreenWidth() / 2 - 250;
-            int rightColX = GetScreenWidth() / 2 + 50;
-            int startY = 160;
+            // 3. Layout Coordinates (Dynamic centering)
+            int leftColX = centerX - 250;
+            int rightColX = centerX + 50;
+            int startY = centerY - 180; // Adjusted for better vertical center
 
             // --- MOVEMENT SECTION (Left Side) ---
             DrawText("MOVEMENT", leftColX, startY, 25, LIGHTGRAY);
@@ -586,53 +630,54 @@ int main(void) {
             
             // Draw WASD Cluster
             int wasdY = startY + 50;
-            DrawControlKey("W", "Move forward", leftColX + 60, wasdY);
-            DrawControlKey("A", "Turn Left", leftColX + 60, wasdY + 60);
-            DrawControlKey("S", "Reverse", leftColX + 60, wasdY + 120);
-            DrawControlKey("D", "Turn Right", leftColX + 60, wasdY + 180);
+            DrawControlKey("W", "Move forward", leftColX , wasdY);
+            DrawControlKey("A", "Turn Left", leftColX , wasdY + 60);
+            DrawControlKey("S", "Reverse", leftColX , wasdY + 120);
+            DrawControlKey("D", "Turn Right", leftColX , wasdY + 180);
 
             // --- ACTIONS SECTION (Right Side) ---
             DrawText("ACTIONS", rightColX, startY, 25, LIGHTGRAY);
             DrawLine(rightColX, startY + 30, rightColX + 200, startY + 30, LIGHTGRAY);
 
             int actionY = startY + 50;
-            DrawControlKey("K", "Show Orders", rightColX, actionY);
-            DrawControlKey("F", "Toggle Fullscreen", rightColX, actionY + 70);
-            DrawControlKey("ESC", "Exit Game", rightColX, actionY + 140); // Assuming you add ESC logic later
+            DrawControlKey("MW UP", "Zoom In", rightColX, actionY);
+            DrawControlKey("MW DOWN", "Zoom Out", rightColX, actionY + 60);
+            DrawControlKey("F", "Toggle Fullscreen", rightColX, actionY + 120);
+            DrawControlKey("ESC", "Exit Game", rightColX, actionY + 180);
 
             // --- GAMEPLAY TIPS ---
-            int tipY = 500;
+            // Calculate tips relative to bottom of screen
+            int tipY = centerY + 200;
             const char* tip1 = "DELIVERY TIP: Follow the White Arrow to find the restaurant and then the customer!";
-            DrawRectangle(0, tipY, GetScreenWidth(), 40, Fade(DARKGREEN, 0.6f));
-            DrawText(tip1, GetScreenWidth()/2 - MeasureText(tip1, 20)/2, tipY + 10, 20, WHITE);
+            DrawRectangle(0, tipY, screenWidth, 40, Fade(DARKGREEN, 0.6f));
+            DrawText(tip1, centerX - MeasureText(tip1, 20)/2, tipY + 10, 20, WHITE);
 
-            tipY = 550;
-            const char* tip2 = "BE CAREFUL: Deliver the food on time or else you are going to loose money! You have 4 minutes in total to make deliveries.";
-            DrawRectangle(0, tipY, GetScreenWidth(), 40, Fade(RED, 0.6f));
-            DrawText(tip2, GetScreenWidth()/2 - MeasureText(tip2, 20)/2, tipY + 10, 20, WHITE);
+            tipY += 50;
+            const char* tip2 = "BE CAREFUL: Deliver the food on time or else you are going to lose money!";
+            DrawRectangle(0, tipY, screenWidth, 40, Fade(RED, 0.6f));
+            DrawText(tip2, centerX - MeasureText(tip2, 20)/2, tipY + 10, 20, WHITE);
 
             // 4. Back Button
-            float btnX = GetScreenWidth() / 2.0f - BUTTON_WIDTH / 2.0f;
-            float btnY = GetScreenHeight() - 200;
-            if (DrawButton("BACK", (Rectangle){btnX, btnY, BUTTON_WIDTH, BUTTON_HEIGHT}, FONT_SIZE, ORANGE, WHITE, BLACK)) {
+            if (DrawButton("BACK", (Rectangle){centerX - BUTTON_WIDTH/2, tipY + 55, BUTTON_WIDTH, BUTTON_HEIGHT}, FONT_SIZE, ORANGE, WHITE, BLACK)) {
                 currentState = STATE_MENU;
             }
       }
 
     // --- STATE: ABOUT CREATORS ---
     else if (currentState == STATE_ABOUT_CREATORS) {
-        // 1. Background (Dimmed game background)
-        DrawTexturePro(background, (Rectangle){0,0,background.width,background.height}, (Rectangle){0,0,GetScreenWidth(),GetScreenHeight()}, (Vector2){0,0}, 0, DARKGRAY);
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.7f)); 
+        // 1. Background
+        DrawTexturePro(background, bgSource, bgDest, bgOrigin, 0.0f, DARKGRAY);
+        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.7f)); 
 
-        int screenW = GetScreenWidth();
-        int centerX = screenW / 2;
+        int centerX = screenWidth / 2;
+        int centerY = screenHeight / 2;
         
         // Define a central panel area
         int panelWidth = 700;
         int panelHeight = 510;
+        // Dynamically calculate top-left corner
         int panelX = centerX - panelWidth / 2;
-        int panelY = GetScreenHeight() / 2 - panelHeight / 2 - 30;
+        int panelY = centerY - panelHeight / 2;
 
         // Draw the "Glass" Panel
         DrawRectangleRounded((Rectangle){panelX, panelY, panelWidth, panelHeight}, 0.1f, 10, Fade(SKYBLUE, 0.4f));
@@ -687,7 +732,7 @@ int main(void) {
         y += gapLarge;
 
         // E. LICENSE
-        const char* licenceLabel = "LICENCE:";
+        const char* licenceLabel = "LICENSE:";
         DrawText(licenceLabel, centerX - MeasureText(licenceLabel, FONT_SIZE)/2, y, FONT_SIZE, ORANGE);
         y += 35;
         const char* license = "MIT License";
@@ -703,15 +748,16 @@ int main(void) {
         }
     }
 
+      // --- OVERLAY: EXIT REQUEST ---
       if (exitRequest) {
         // A. Heavy Black Fade Background
-        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.8f));
+        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.8f));
 
-        // B. Large Central Box
+        // B. Large Central Box (Dynamically Centered)
         int boxWidth = 500;
         int boxHeight = 280;
-        int boxX = GetScreenWidth() / 2 - boxWidth / 2;
-        int boxY = GetScreenHeight() / 2 - boxHeight / 2;
+        int boxX = (screenWidth - boxWidth) / 2;
+        int boxY = (screenHeight - boxHeight) / 2;
 
         DrawRectangle(boxX, boxY, boxWidth, boxHeight, RAYWHITE);
         DrawRectangleLines(boxX, boxY, boxWidth, boxHeight, BLACK);
