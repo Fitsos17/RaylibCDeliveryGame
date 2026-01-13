@@ -56,6 +56,4 @@ dkms.conf
 
 # exclude additional helper files
 .vscode
-TODO.txt
 main
-cheatsheet.txt

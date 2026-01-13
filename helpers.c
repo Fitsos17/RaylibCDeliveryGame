@@ -101,7 +101,6 @@ Order CreateNewOrder()  {
     strcpy(newOrder.restaurantName, restaurants[restaurantIndex].name);
         
     // Get random house
-    int houseIndex = GetRandomValue(0, houseCount - 1);
     newOrder.dropoffLocation = (Vector2){0, 0};
         
     newOrder.isActive = true;
@@ -119,7 +118,6 @@ void updateOrder(Order *currentOrder, Vector2 bikePos, int *count, float *totalM
         if (currentOrder->timeRemaining > 0) {
             currentOrder->timeRemaining -= GetFrameTime();
             float distToHouse = Vector2Distance(bikePos, currentOrder->dropoffLocation);
-            float distRestToHouse = Vector2Distance(currentOrder->pickupLocation, currentOrder->dropoffLocation);
             
             if (distToHouse < 7.5f)    {
                 (*count)++;
@@ -274,22 +272,23 @@ bool DrawButton(const char *text, Rectangle rec, int fontSize, Color color, Colo
 Parameters: Pointers to character of key (*key) and key's function (*action) and button's coordinates
 */
 void DrawControlKey(const char* key, const char* action, int x, int y) {
-    int keySize = 50;
+    int keyHeight = 50;
+    int keyWidth = 100;
     
     // Draw Shadow (for 3D effect)
-    DrawRectangleRounded((Rectangle){x + 2, y + 4, keySize, keySize}, 0.2f, 10, Fade(BLACK, 0.5f));
+    DrawRectangleRounded((Rectangle){x + 2, y + 4, keyWidth, keyHeight}, 0.2f, 10, Fade(BLACK, 0.5f));
     
     // Draw Key Background
-    DrawRectangleRounded((Rectangle){x, y, keySize, keySize}, 0.2f, 10, RAYWHITE);
-    DrawRectangleRoundedLines((Rectangle){x, y, keySize, keySize}, 0.2f, 10, DARKGRAY);
+    DrawRectangleRounded((Rectangle){x, y, keyWidth, keyHeight}, 0.2f, 10, RAYWHITE);
+    DrawRectangleRoundedLines((Rectangle){x, y, keyWidth, keyHeight}, 0.2f, 10, DARKGRAY);
     
     // Draw Key Letter (Centered)
     int textWidth = MeasureText(key, 20);
-    DrawText(key, x + (keySize/2 - textWidth/2), y + (keySize/2 - 10), 20, DARKGRAY);
+    DrawText(key, x + (keyWidth/2 - textWidth/2), y + (keyHeight/2 - 10), 20, DARKGRAY);
     
     // Draw Action Description
     if (action != NULL) {
-        DrawText(action, x + keySize + 20, y + 15, 20, WHITE);
+        DrawText(action, x + keyWidth + 20, y + 15, 20, WHITE);
     }
 }
 
